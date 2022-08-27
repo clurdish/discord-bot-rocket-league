@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "HCC.Discord.RocketLeague.AzureFunctions": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7272",
+      "launchBrowser": false
+    }
+  }
+}

@@ -1,4 +1,4 @@
-﻿using HCC.Discord.RocketLeague;
+﻿using HCC.Discord.RocketLeague.Domain;
 
 Console.WriteLine("Rocket League tournament times. Press any key to stop.\n");
 
