@@ -1,41 +1,42 @@
-﻿using HCC.Discord.RocketLeague.Domain;
+﻿using Discord;
+using Discord.Addons.Hosting;
+using Discord.WebSocket;
+using HCC.Discord.RocketLeague.Domain;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-Console.WriteLine("Rocket League tournament times. Press any key to stop.\n");
+namespace HCC.Discord.RocketLeague.Console;
 
-var cts = new CancellationTokenSource();
-var readLineTask = ReadLine();
-var printTimesTask = PrintTimes(cts.Token);
-
-await Task.WhenAny(readLineTask, printTimesTask);
-cts.Cancel();
-
-
-async Task ReadLine()
+public class Program
 {
-    while (!Console.KeyAvailable)
+    public static async Task Main(string[] args)
     {
-        await Task.Delay(100);
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(builder =>
+            {
+                builder.AddUserSecrets<Program>();
+            })
+            .ConfigureDiscordHost((context, config) =>
+            {
+                config.SocketConfig = new DiscordSocketConfig
+                {
+                    LogLevel = LogSeverity.Verbose,
+                    AlwaysDownloadUsers = true,
+                    MessageCacheSize = 200,
+                };
+
+                config.Token = context.Configuration.GetValue<string>("Discord:Bot:Token");
+            })
+            .ConfigureServices(ConfigureServices)
+            .Build();
+
+        await host.RunAsync();
     }
-}
 
-async Task PrintTimes(CancellationToken cancellationToken)
-{
-    var rlgService = new RocketLeagueService();
-    while (!cancellationToken.IsCancellationRequested)
+    public static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
-        var tournamentInfoList = await rlgService.GetTouramentTimes();
-        
-        foreach (var t in tournamentInfoList)
-        {
-            Console.WriteLine($"{t.MatchType}: {t.StartTime?.ToLocalTime()}");
-        }
-        Console.WriteLine();
-
-        if (cancellationToken.IsCancellationRequested)
-        {
-            return;
-        }
-
-        await Task.Delay(5000);
+        services.AddSingleton<RocketLeagueService>();
+        services.AddHostedService<DiscordHandler>();
     }
 }
